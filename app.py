@@ -1,10 +1,10 @@
 from flask import Flask
 
-app = Flask(__name__)
+app = Flask("OMR")
 
-@app.route('/')
+@app.route('/', methods = ['GET'])
 def home():
-    return "Hello, Hostinger!"
+    return "Hello, Monka!"
 
 if __name__ == "__main__":
     app.run()
