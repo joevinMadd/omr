@@ -1,7 +1,7 @@
 <!-- templates/camera.html -->
 {% extends "base.html" %}
 
-{% block title %}Camera{% endblock %}
+{% block title %}Capture Photo{% endblock %}
 
 {% block header %}
     Capture and Save Photo
@@ -13,14 +13,17 @@
         <label for="folderName">Enter Folder Name:</label>
         <input type="text" id="folderName" name="folderName" required><br><br>
 
-        <!-- Video element to display camera stream -->
-        <video id="video" width="320" height="240" autoplay></video><br><br>
+        <!-- Input to open the camera and capture a photo -->
+        <input type="file" id="capturePhoto" accept="image/*" capture="environment" style="display:none;" />
 
-        <!-- Button to take photo -->
-        <button type="button" id="captureBtn">Capture Photo</button><br><br>
+        <!-- Button to open the camera -->
+        <button type="button" id="getPhotoBtn">Get Photo</button><br><br>
 
-        <!-- Hidden canvas to capture the image -->
-        <canvas id="canvas" style="display: none;"></canvas>
+        <!-- Display captured image -->
+        <img id="preview" style="display:none;" alt="Captured photo will appear here" /><br><br>
+
+        <!-- Hidden canvas to process the captured image -->
+        <canvas id="canvas" style="display:none;"></canvas>
 
         <!-- Button to upload the captured photo -->
         <button type="submit">Save Photo</button>
@@ -35,53 +38,51 @@
 
 {% block scripts %}
     <script>
-        const video = document.getElementById('video');
+        const getPhotoBtn = document.getElementById('getPhotoBtn');
+        const capturePhoto = document.getElementById('capturePhoto');
+        const preview = document.getElementById('preview');
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
-        const captureBtn = document.getElementById('captureBtn');
         const photoForm = document.getElementById('photoForm');
         let imageData;
 
-        // Get camera stream, prefer rear camera on mobile
-        const constraints = {
-            video: {
-                facingMode: { exact: "environment" } // Use back camera on phones
-            }
-        };
-
-        navigator.mediaDevices.getUserMedia(constraints)
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(error => {
-                console.error('Error accessing camera:', error);
-                // Fallback if environment camera is unavailable
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        video.srcObject = stream;
-                    })
-                    .catch(err => {
-                        console.error('Fallback to front camera failed:', err);
-                    });
-            });
-
-        // Capture the photo from the video stream when the button is clicked
-        captureBtn.addEventListener('click', () => {
-            const photoWidth = 700; // Fixed width
-            const photoHeight = 713; // Fixed height
-
-            // Resize the canvas to match the fixed photo dimensions
-            canvas.width = photoWidth;
-            canvas.height = photoHeight;
-
-            // Draw the video image to the canvas at the specified resolution
-            context.drawImage(video, 0, 0, photoWidth, photoHeight);
-
-            // Convert the canvas data to a base64 image
-            imageData = canvas.toDataURL('image/png');
+        // When the "Get Photo" button is clicked, open the camera input
+        getPhotoBtn.addEventListener('click', () => {
+            capturePhoto.click();
         });
 
-        // Handle the form submission
+        // Handle the photo capture from the device camera
+        capturePhoto.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+
+                    // Create an image object to draw the captured photo to canvas
+                    const img = new Image();
+                    img.onload = function() {
+                        const photoWidth = 700; // Fixed width
+                        const photoHeight = 713; // Fixed height
+
+                        // Resize canvas to match fixed dimensions
+                        canvas.width = photoWidth;
+                        canvas.height = photoHeight;
+
+                        // Draw the captured image onto the canvas
+                        context.drawImage(img, 0, 0, photoWidth, photoHeight);
+
+                        // Convert canvas data to a base64 image
+                        imageData = canvas.toDataURL('image/png');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle form submission to save the photo
         photoForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const folderName = document.getElementById('folderName').value;
@@ -106,7 +107,7 @@
             }
         });
 
-        // Function to load and display saved photos
+        // Load saved photos
         async function loadSavedPhotos(folderName) {
             const response = await fetch(`/photos/${folderName}`);
             const photos = await response.json();
