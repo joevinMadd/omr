@@ -19,11 +19,8 @@
         <!-- Button to open the camera -->
         <button type="button" id="getPhotoBtn">Get Photo</button><br><br>
 
-        <!-- Display captured image -->
-        <img id="preview" style="display:none;" alt="Captured photo will appear here" /><br><br>
-
-        <!-- Hidden canvas to process the captured image -->
-        <canvas id="canvas" style="display:none;"></canvas>
+        <!-- Display captured image in a preview canvas -->
+        <canvas id="canvas" width="320" height="240" style="border: 1px solid black;"></canvas><br><br>
 
         <!-- Button to upload the captured photo -->
         <button type="submit">Save Photo</button>
@@ -40,11 +37,10 @@
     <script>
         const getPhotoBtn = document.getElementById('getPhotoBtn');
         const capturePhoto = document.getElementById('capturePhoto');
-        const preview = document.getElementById('preview');
         const canvas = document.getElementById('canvas');
         const context = canvas.getContext('2d');
         const photoForm = document.getElementById('photoForm');
-        let imageData;
+        let originalImageData;
 
         // When the "Get Photo" button is clicked, open the camera input
         getPhotoBtn.addEventListener('click', () => {
@@ -57,24 +53,14 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-
-                    // Create an image object to draw the captured photo to canvas
                     const img = new Image();
                     img.onload = function() {
-                        const photoWidth = 700; // Fixed width
-                        const photoHeight = 713; // Fixed height
+                        // Draw the captured image on the canvas at fixed 320x240 dimensions
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        context.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                        // Resize canvas to match fixed dimensions
-                        canvas.width = photoWidth;
-                        canvas.height = photoHeight;
-
-                        // Draw the captured image onto the canvas
-                        context.drawImage(img, 0, 0, photoWidth, photoHeight);
-
-                        // Convert canvas data to a base64 image
-                        imageData = canvas.toDataURL('image/png');
+                        // Save the image at its original resolution (without resizing)
+                        originalImageData = e.target.result;
                     };
                     img.src = e.target.result;
                 };
@@ -87,7 +73,7 @@
             e.preventDefault();
             const folderName = document.getElementById('folderName').value;
 
-            // Send the image and folder name to the backend
+            // Send the original captured image and folder name to the backend
             const response = await fetch('/save-photo', {
                 method: 'POST',
                 headers: {
@@ -95,7 +81,7 @@
                 },
                 body: JSON.stringify({
                     folderName: folderName,
-                    image: imageData
+                    image: originalImageData
                 })
             });
 
