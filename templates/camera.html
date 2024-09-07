@@ -1,0 +1,123 @@
+<!-- templates/camera.html -->
+{% extends "base.html" %}
+
+{% block title %}Camera{% endblock %}
+
+{% block header %}
+    Capture and Save Photo
+{% endblock %}
+
+{% block content %}
+    <!-- Form to enter folder name and capture image -->
+    <form id="photoForm">
+        <label for="folderName">Enter Folder Name:</label>
+        <input type="text" id="folderName" name="folderName" required><br><br>
+
+        <!-- Video element to display camera stream -->
+        <video id="video" width="320" height="240" autoplay></video><br><br>
+
+        <!-- Button to take photo -->
+        <button type="button" id="captureBtn">Capture Photo</button><br><br>
+
+        <!-- Hidden canvas to capture the image -->
+        <canvas id="canvas" style="display: none;"></canvas>
+
+        <!-- Button to upload the captured photo -->
+        <button type="submit">Save Photo</button>
+    </form>
+
+    <!-- Display saved photos -->
+    <div id="saved-photos">
+        <h2>Saved Photos</h2>
+        <div id="photo-list"></div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const captureBtn = document.getElementById('captureBtn');
+        const photoForm = document.getElementById('photoForm');
+        let imageData;
+
+        // Get camera stream, prefer rear camera on mobile
+        const constraints = {
+            video: {
+                facingMode: { exact: "environment" } // Use back camera on phones
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error('Error accessing camera:', error);
+                // Fallback if environment camera is unavailable
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        console.error('Fallback to front camera failed:', err);
+                    });
+            });
+
+        // Capture the photo from the video stream when the button is clicked
+        captureBtn.addEventListener('click', () => {
+            const photoWidth = 700; // Fixed width
+            const photoHeight = 713; // Fixed height
+
+            // Resize the canvas to match the fixed photo dimensions
+            canvas.width = photoWidth;
+            canvas.height = photoHeight;
+
+            // Draw the video image to the canvas at the specified resolution
+            context.drawImage(video, 0, 0, photoWidth, photoHeight);
+
+            // Convert the canvas data to a base64 image
+            imageData = canvas.toDataURL('image/png');
+        });
+
+        // Handle the form submission
+        photoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const folderName = document.getElementById('folderName').value;
+
+            // Send the image and folder name to the backend
+            const response = await fetch('/save-photo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    folderName: folderName,
+                    image: imageData
+                })
+            });
+
+            if (response.ok) {
+                alert('Photo saved successfully!');
+                loadSavedPhotos(folderName);
+            } else {
+                alert('Error saving photo.');
+            }
+        });
+
+        // Function to load and display saved photos
+        async function loadSavedPhotos(folderName) {
+            const response = await fetch(`/photos/${folderName}`);
+            const photos = await response.json();
+
+            const photoList = document.getElementById('photo-list');
+            photoList.innerHTML = '';
+            photos.forEach(photo => {
+                const img = document.createElement('img');
+                img.src = `/photos/${folderName}/${photo}`;
+                photoList.appendChild(img);
+            });
+        }
+    </script>
+{% endblock %}
