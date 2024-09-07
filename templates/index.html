@@ -53,13 +53,27 @@
         const photoForm = document.getElementById('photoForm');
         let imageData;
 
-        // Ask for permission to access the camera and stream it to the video element
-        navigator.mediaDevices.getUserMedia({ video: true })
+        // Get camera stream, prefer rear camera on mobile
+        const constraints = {
+            video: {
+                facingMode: { exact: "environment" } // Use back camera on phones
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => {
                 video.srcObject = stream;
             })
             .catch(error => {
                 console.error('Error accessing camera:', error);
+                // Fallback if environment camera is unavailable
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        console.error('Fallback to front camera failed:', err);
+                    });
             });
 
         // Capture the photo from the video stream when the button is clicked
