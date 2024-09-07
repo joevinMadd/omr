@@ -3,9 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Omr</title>
+    <title>Capture and Save Photo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #saved-photos {
+            margin-top: 20px;
+        }
+        #saved-photos img {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Let's go!!</h1>
+    <h1>Capture and Save Photo</h1>
+
+    <!-- Form to enter folder name and capture image -->
+    <form id="photoForm">
+        <label for="folderName">Enter Folder Name:</label>
+        <input type="text" id="folderName" name="folderName" required><br><br>
+
+        <!-- Video element to display camera stream -->
+        <video id="video" width="320" height="240" autoplay></video><br><br>
+
+        <!-- Button to take photo -->
+        <button type="button" id="captureBtn">Capture Photo</button><br><br>
+
+        <!-- Hidden canvas to capture the image -->
+        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+
+        <!-- Button to upload the captured photo -->
+        <button type="submit">Save Photo</button>
+    </form>
+
+    <!-- Display saved photos -->
+    <div id="saved-photos">
+        <h2>Saved Photos</h2>
+        <div id="photo-list"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const captureBtn = document.getElementById('captureBtn');
+        const photoForm = document.getElementById('photoForm');
+        let imageData;
+
+        // Ask for permission to access the camera and stream it to the video element
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(error => {
+                console.error('Error accessing camera:', error);
+            });
+
+        // Capture the photo from the video stream when the button is clicked
+        captureBtn.addEventListener('click', () => {
+            context.drawImage(video, 0, 0, 320, 240);
+            imageData = canvas.toDataURL('image/png');
+        });
+
+        // Handle the form submission
+        photoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const folderName = document.getElementById('folderName').value;
+
+            // Send the image and folder name to the backend
+            const response = await fetch('/save-photo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    folderName: folderName,
+                    image: imageData
+                })
+            });
+
+            if (response.ok) {
+                alert('Photo saved successfully!');
+                loadSavedPhotos(folderName);
+            } else {
+                alert('Error saving photo.');
+            }
+        });
+
+        // Function to load and display saved photos
+        async function loadSavedPhotos(folderName) {
+            const response = await fetch(`/photos/${folderName}`);
+            const photos = await response.json();
+
+            const photoList = document.getElementById('photo-list');
+            photoList.innerHTML = '';
+            photos.forEach(photo => {
+                const img = document.createElement('img');
+                img.src = `/photos/${folderName}/${photo}`;
+                photoList.appendChild(img);
+            });
+        }
+    </script>
 </body>
 </html>
