@@ -62,7 +62,7 @@
             capturedImages = [];  // Clear previously captured images
             canvasContainer.innerHTML = '';  // Clear previous canvas elements
 
-            Array.from(files).forEach(file => {
+            Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
@@ -80,7 +80,7 @@
                         canvasContainer.appendChild(canvas);
 
                         // Save the image data at its original resolution
-                        capturedImages.push(e.target.result);
+                        capturedImages.push(e.target.result);  // Add each captured image to the array
                     };
                     img.src = e.target.result;
                 };
@@ -101,7 +101,7 @@
                 },
                 body: JSON.stringify({
                     folderName: folderName,
-                    images: capturedImages
+                    images: capturedImages  // Make sure all images are sent
                 })
             });
 

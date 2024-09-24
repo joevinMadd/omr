@@ -20,7 +20,7 @@ def save_photos():
     folder_name = data.get('folderName')
     images = data.get('images', [])
 
-    # Create a folder for the images if it doesn't exist
+    # Ensure folder path exists
     folder_path = os.path.join(UPLOAD_FOLDER, folder_name)
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
@@ -28,10 +28,10 @@ def save_photos():
     saved_files = []
     for index, image_data in enumerate(images):
         # Generate a unique filename for each image
-        image_filename = f'photo_{index + 1}.png'
+        image_filename = f'photo_{index + 1}.png'  # Change the index dynamically
         image_path = os.path.join(folder_path, image_filename)
 
-        # Decode the Base64 image data
+        # Decode Base64 image and save
         image_data = image_data.split(',')[1]  # Remove the base64 metadata prefix
         with open(image_path, 'wb') as image_file:
             image_file.write(base64.b64decode(image_data))
