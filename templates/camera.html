@@ -1,29 +1,29 @@
 <!-- templates/camera.html -->
 {% extends "base.html" %}
 
-{% block title %}Capture Photo{% endblock %}
+{% block title %}Capture Multiple Photos{% endblock %}
 
 {% block header %}
-    Capture and Save Photo
+    Capture and Save Multiple Photos
 {% endblock %}
 
 {% block content %}
-    <!-- Form to enter folder name and capture image -->
+    <!-- Form to enter folder name and capture multiple images -->
     <form id="photoForm">
         <label for="folderName">Enter Folder Name:</label>
         <input type="text" id="folderName" name="folderName" required><br><br>
 
-        <!-- Input to open the camera and capture a photo -->
-        <input type="file" id="capturePhoto" accept="image/*" capture="environment" style="display:none;" />
+        <!-- Input to open the camera and capture multiple photos -->
+        <input type="file" id="capturePhoto" accept="image/*" capture="environment" multiple style="display:none;" />
 
         <!-- Button to open the camera -->
-        <button type="button" id="getPhotoBtn">Get Photo</button><br><br>
+        <button type="button" id="getPhotoBtn">Get Photos</button><br><br>
 
-        <!-- Display captured image in a preview canvas -->
-        <canvas id="canvas" width="240" height="320" style="border: 1px solid black;"></canvas><br><br>
+        <!-- Display captured images in preview canvases -->
+        <div id="canvasContainer" style="display: flex; gap: 10px;"></div><br><br>
 
-        <!-- Button to upload the captured photo -->
-        <button type="submit">Save Photo</button>
+        <!-- Button to upload the captured photos -->
+        <button type="submit">Save Photos</button>
     </form>
 
     <!-- Display chart for saved photos -->
@@ -47,59 +47,69 @@
     <script>
         const getPhotoBtn = document.getElementById('getPhotoBtn');
         const capturePhoto = document.getElementById('capturePhoto');
-        const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
         const photoForm = document.getElementById('photoForm');
-        let originalImageData;
+        let capturedImages = [];
 
-        // When the "Get Photo" button is clicked, open the camera input
+        // When the "Get Photos" button is clicked, open the camera input
         getPhotoBtn.addEventListener('click', () => {
             capturePhoto.click();
         });
 
-        // Handle the photo capture from the device camera
+        // Handle multiple photo captures from the device camera
         capturePhoto.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
+            const files = event.target.files;
+            capturedImages = [];  // Clear previously captured images
+            canvasContainer.innerHTML = '';  // Clear previous canvas elements
+
+            Array.from(files).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
+                        // Create a new canvas for each image
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 240;
+                        canvas.height = 320;
+                        const context = canvas.getContext('2d');
+
                         // Draw the captured image on the canvas at fixed 240x320 dimensions
-                        context.clearRect(0, 0, canvas.width, canvas.height);
                         context.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                        // Save the image at its original resolution (without resizing)
-                        originalImageData = e.target.result;
+                        // Append the canvas to the container
+                        canvasContainer.appendChild(canvas);
+
+                        // Save the image data at its original resolution
+                        capturedImages.push(e.target.result);
                     };
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
-            }
+            });
         });
 
-        // Handle form submission to save the photo
+        // Handle form submission to save multiple photos
         photoForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const folderName = document.getElementById('folderName').value;
 
-            // Send the original captured image and folder name to the backend
-            const response = await fetch('/save-photo', {
+            // Send all captured images and folder name to the backend
+            const response = await fetch('/save-photos', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     folderName: folderName,
-                    image: originalImageData
+                    images: capturedImages
                 })
             });
 
             if (response.ok) {
-                alert('Photo saved successfully!');
+                alert('Photos saved successfully!');
                 loadSavedPhotos();
             } else {
-                alert('Error saving photo.');
+                alert('Error saving photos.');
             }
         });
 
@@ -113,7 +123,6 @@
 
             // Iterate over folders and generate the chart
             for (const [folderName, photos] of Object.entries(folders)) {
-                // Create a new row
                 const row = document.createElement('tr');
 
                 // Create folder name cell
@@ -132,7 +141,6 @@
                 photosCell.appendChild(fileList);
                 row.appendChild(photosCell);
 
-                // Append the row to the table body
                 tableBody.appendChild(row);
             }
         }

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import os
 import base64
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -8,34 +9,35 @@ app = Flask(__name__)
 def home():
     return render_template('camera.html')
 
-@app.route('/save-photo', methods=['POST'])
-def save_photo():
-    data = request.json
-    folder_name = data.get('folderName')
-    image_data = data.get('image')
+def save_photos():
+    data = request.get_json()
+    folder_name = data['folderName']
+    images = data['images']
 
-    # Create folder if it doesn't exist
-    folder_path = os.path.join('static', 'photos', folder_name)
-    os.makedirs(folder_path, exist_ok=True)
-
-    # Save the image
-    image_data = image_data.split(',')[1]
-    image_path = os.path.join(folder_path, 'photo.png')
-    with open(image_path, 'wb') as f:
-        f.write(base64.b64decode(image_data))
-
-    return jsonify({"message": "Photo saved"}), 200
-
-@app.route('/photos/<folder_name>')
-def get_photos(folder_name):
+    # Ensure the folder exists
     folder_path = os.path.join('static', 'photos', folder_name)
     if not os.path.exists(folder_path):
-        return jsonify([])
+        os.makedirs(folder_path)
 
-    photos = os.listdir(folder_path)
-    return jsonify(photos)
+    saved_files = []
 
-@app.route('/photos', endpoint='get_photos_unique')
+    # Loop through each image and save it with a unique filename
+    for image_data in images:
+        # Create a unique filename using timestamp
+        unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}.png"
+        image_path = os.path.join(folder_path, unique_filename)
+
+        # Decode the base64 image and save it
+        img_data = base64.b64decode(image_data.split(',')[1])
+        with open(image_path, 'wb') as f:
+            f.write(img_data)
+        
+        saved_files.append(unique_filename)
+
+    return jsonify({'message': 'Photos saved', 'saved_files': saved_files}), 200
+
+# Route to list photos in all folders
+@app.route('/photos', methods=['GET'])
 def get_photos():
     photos_directory = os.path.join('static', 'photos')
     if not os.path.exists(photos_directory):
@@ -48,7 +50,6 @@ def get_photos():
             folders[folder_name] = os.listdir(folder_path)
 
     return jsonify(folders)
-
 
 
 if __name__ == '__main__':
