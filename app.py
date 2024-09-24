@@ -23,7 +23,7 @@ def save_photos():
     saved_files = []
     for index, image in enumerate(images):
         # Generate a unique filename using the current timestamp
-        unique_filename = f"photo_{datetime.now().strftime('%Y%m%d%H%M%S')}_{index}.png"
+        unique_filename = f"{folder_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{index}.png"
         image_data = image.split(",")[1]  # Remove the data URL part
         with open(os.path.join(folder_path, unique_filename), "wb") as f:
             f.write(base64.b64decode(image_data))  # Save image
