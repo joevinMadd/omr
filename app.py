@@ -35,7 +35,7 @@ def get_photos(folder_name):
     photos = os.listdir(folder_path)
     return jsonify(photos)
 
-@app.route('/photos')
+@app.route('/photos', endpoint='get_photos_unique')
 def get_photos():
     photos_directory = os.path.join('static', 'photos')
     if not os.path.exists(photos_directory):
@@ -48,6 +48,7 @@ def get_photos():
             folders[folder_name] = os.listdir(folder_path)
 
     return jsonify(folders)
+
 
 
 if __name__ == '__main__':
