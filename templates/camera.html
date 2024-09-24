@@ -26,10 +26,20 @@
         <button type="submit">Save Photo</button>
     </form>
 
-    <!-- Display saved photos -->
-    <div id="saved-photos">
-        <h2>Saved Photos</h2>
-        <div id="photo-list"></div>
+    <!-- Display chart for saved photos -->
+    <div id="photo-chart">
+        <h2>Saved Photos by Folder</h2>
+        <table id="photoTable" border="1" style="width:100%; text-align: left;">
+            <thead>
+                <tr>
+                    <th>Folder Name</th>
+                    <th>Photo Filenames</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Folder names and photo filenames will be added here -->
+            </tbody>
+        </table>
     </div>
 {% endblock %}
 
@@ -55,7 +65,7 @@
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        // Draw the captured image on the canvas at fixed 320x240 dimensions
+                        // Draw the captured image on the canvas at fixed 240x320 dimensions
                         context.clearRect(0, 0, canvas.width, canvas.height);
                         context.drawImage(img, 0, 0, canvas.width, canvas.height);
 
@@ -87,24 +97,47 @@
 
             if (response.ok) {
                 alert('Photo saved successfully!');
-                loadSavedPhotos(folderName);
+                loadSavedPhotos();
             } else {
                 alert('Error saving photo.');
             }
         });
 
-        // Load saved photos
-        async function loadSavedPhotos(folderName) {
-            const response = await fetch(`/photos/${folderName}`);
-            const photos = await response.json();
+        // Function to load all saved photos and generate the table
+        async function loadSavedPhotos() {
+            const response = await fetch(`/photos`);
+            const folders = await response.json();
 
-            const photoList = document.getElementById('photo-list');
-            photoList.innerHTML = '';
-            photos.forEach(photo => {
-                const img = document.createElement('img');
-                img.src = `/photos/${folderName}/${photo}`;
-                photoList.appendChild(img);
-            });
+            const tableBody = document.querySelector('#photoTable tbody');
+            tableBody.innerHTML = ''; // Clear the table body
+
+            // Iterate over folders and generate the chart
+            for (const [folderName, photos] of Object.entries(folders)) {
+                // Create a new row
+                const row = document.createElement('tr');
+
+                // Create folder name cell
+                const folderCell = document.createElement('td');
+                folderCell.textContent = folderName;
+                row.appendChild(folderCell);
+
+                // Create photos filenames cell
+                const photosCell = document.createElement('td');
+                const fileList = document.createElement('ul');
+                photos.forEach(photo => {
+                    const fileItem = document.createElement('li');
+                    fileItem.textContent = photo;
+                    fileList.appendChild(fileItem);
+                });
+                photosCell.appendChild(fileList);
+                row.appendChild(photosCell);
+
+                // Append the row to the table body
+                tableBody.appendChild(row);
+            }
         }
+
+        // Load the saved photos initially when the page loads
+        window.onload = loadSavedPhotos;
     </script>
 {% endblock %}

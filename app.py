@@ -35,5 +35,20 @@ def get_photos(folder_name):
     photos = os.listdir(folder_path)
     return jsonify(photos)
 
+@app.route('/photos')
+def get_photos():
+    photos_directory = os.path.join('static', 'photos')
+    if not os.path.exists(photos_directory):
+        return jsonify({})
+
+    folders = {}
+    for folder_name in os.listdir(photos_directory):
+        folder_path = os.path.join(photos_directory, folder_name)
+        if os.path.isdir(folder_path):
+            folders[folder_name] = os.listdir(folder_path)
+
+    return jsonify(folders)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
