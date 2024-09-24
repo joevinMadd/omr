@@ -9,50 +9,39 @@ app = Flask(__name__)
 def home():
     return render_template('camera.html')
 
-# Ensure this directory exists where images will be saved
-UPLOAD_FOLDER = 'photos'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+BASE_DIR = 'photos'  # Base directory for saved photos
 
 @app.route('/save-photos', methods=['POST'])
 def save_photos():
-    data = request.get_json()
-    folder_name = data.get('folderName')
-    images = data.get('images', [])
+    data = request.json
+    folder_name = data['folderName']
+    images = data['images']
 
-    # Ensure folder path exists
-    folder_path = os.path.join(UPLOAD_FOLDER, folder_name)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
+    folder_path = os.path.join(BASE_DIR, folder_name)
+    os.makedirs(folder_path, exist_ok=True)  # Create folder if it doesn't exist
 
     saved_files = []
-    for index, image_data in enumerate(images):
-        # Generate a unique filename for each image
-        image_filename = f'photo_{index + 1}.png'  # Change the index dynamically
-        image_path = os.path.join(folder_path, image_filename)
+    for index, image in enumerate(images):
+        # Generate a unique filename using the current timestamp
+        unique_filename = f"photo_{datetime.now().strftime('%Y%m%d%H%M%S')}_{index}.png"
+        image_data = image.split(",")[1]  # Remove the data URL part
+        with open(os.path.join(folder_path, unique_filename), "wb") as f:
+            f.write(base64.b64decode(image_data))  # Save image
 
-        # Decode Base64 image and save
-        image_data = image_data.split(',')[1]  # Remove the base64 metadata prefix
-        with open(image_path, 'wb') as image_file:
-            image_file.write(base64.b64decode(image_data))
+        saved_files.append(unique_filename)
 
-        saved_files.append(image_filename)
+    return jsonify(saved_files), 200
 
-    return jsonify({
-        'message': 'Photos saved successfully',
-        'saved_files': saved_files
-    }), 200
-
-# Route to fetch all photos grouped by folder
 @app.route('/photos', methods=['GET'])
 def get_photos():
-    photos_by_folder = {}
-    for folder_name in os.listdir(UPLOAD_FOLDER):
-        folder_path = os.path.join(UPLOAD_FOLDER, folder_name)
+    # Logic to return saved photos (similar to what you currently have)
+    folders = {}
+    for folder_name in os.listdir(BASE_DIR):
+        folder_path = os.path.join(BASE_DIR, folder_name)
         if os.path.isdir(folder_path):
-            photos_by_folder[folder_name] = os.listdir(folder_path)
-    
-    return jsonify(photos_by_folder), 200
+            folders[folder_name] = os.listdir(folder_path)
+    return jsonify(folders)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
