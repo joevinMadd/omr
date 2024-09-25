@@ -639,18 +639,18 @@ def get_image_files(folder_path):
     
     return image_files
 
-def choose_folder():
-    # Hide the root Tk window
-    root = Tk()
-    root.withdraw()
+# def choose_folder():
+#     # Hide the root Tk window
+#     root = Tk()
+#     root.withdraw()
 
-    # Open a file dialog to choose a directory
-    folder_path = filedialog.askdirectory(title="Select a folder")
+#     # Open a file dialog to choose a directory
+#     folder_path = filedialog.askdirectory(title="Select a folder")
 
-    # Close the Tk window
-    root.destroy()
+#     # Close the Tk window
+#     root.destroy()
 
-    return folder_path
+#     return folder_path
 
 # def select_csv_file():
 #     # Create a Tkinter root window (it will not be shown)
