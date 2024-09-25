@@ -3,7 +3,7 @@ import numpy as np
 import os
 import csv
 import glob
-from tkinter import Tk, filedialog
+# from tkinter import Tk, filedialog
 
 def stackImages(scale,imgArray):
     """
@@ -652,26 +652,26 @@ def choose_folder():
 
     return folder_path
 
-def select_csv_file():
-    # Create a Tkinter root window (it will not be shown)
-    root = Tk()
-    root.withdraw()  # Hide the root window
+# def select_csv_file():
+#     # Create a Tkinter root window (it will not be shown)
+#     root = Tk()
+#     root.withdraw()  # Hide the root window
 
-    try:
-        # Open the file dialog
-        file_path = filedialog.askopenfilename(
-            title="Select a CSV file",
-            filetypes=[("CSV files", "*.csv")]
-        )
+#     try:
+#         # Open the file dialog
+#         file_path = filedialog.askopenfilename(
+#             title="Select a CSV file",
+#             filetypes=[("CSV files", "*.csv")]
+#         )
 
-        if not file_path:  # Check if no file was selected
-            raise ValueError("No file selected.")
+#         if not file_path:  # Check if no file was selected
+#             raise ValueError("No file selected.")
         
-        return file_path
+#         return file_path
 
-    except ValueError as e:
-        print(f"Error: {e}")
-        return None
+#     except ValueError as e:
+#         print(f"Error: {e}")
+#         return None
 
 def create_text_file(folder_path, file_name, content):
     # Ensure the folder exists
