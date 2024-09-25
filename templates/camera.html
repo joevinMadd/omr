@@ -69,7 +69,6 @@
         {% endfor %}
     </div>
 
-    <!-- Scan button form -->
     <h2>Scan Folder and CSV Files</h2>
     <form id="scanForm" style="margin-top: 20px;">
         <label for="scanFolderName">Select Folder:</label>
@@ -93,23 +92,6 @@
     <div id="resultsContainer" style="display:none;">
         <h3>Result CSV File Paths</h3>
         <ul id="resultsList"></ul>
-
-        <h3>Results Data</h3>
-        <table id="resultsTable" border="1" style="width:100%; text-align: left;">
-            <thead>
-                <tr>
-                    <th>Last Name</th>
-                    <th>First Name</th>
-                    <th>Middle Initial</th>
-                    <th>ID</th>
-                    <th>Exam ID</th>
-                    <th>Score</th>
-                    <th>Invalid Answer</th>
-                    <th>Incorrect Answer</th>
-                </tr>
-            </thead>
-            <tbody id="resultsTableBody"></tbody>
-        </table>
     </div>
 
 {% endblock %}
@@ -278,16 +260,18 @@
         document.getElementById('scanForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const folderPath = document.getElementById('scanFolderName').value;
-    
+
             // Show loading indicator
             document.getElementById('loadingIndicator').style.display = 'block';
             document.getElementById('resultsContainer').style.display = 'none';  // Hide results container
             document.getElementById('elapsedTime').textContent = ''; // Reset elapsed time
-    
+
             const startTime = Date.now(); // Start time for calculating elapsed time
-    
+
+            // Prepare FormData to send folder path to the backend
             const formData = { folderPath };
-    
+
+            // Send form data to the backend for scanning
             const response = await fetch('/scan', {
                 method: 'POST',
                 headers: {
@@ -295,48 +279,34 @@
                 },
                 body: JSON.stringify(formData)
             });
-    
+
             const endTime = Date.now(); // End time for calculating elapsed time
             const elapsedTime = ((endTime - startTime) / 1000).toFixed(2); // Calculate elapsed time in seconds
-    
+
             if (response.ok) {
                 const data = await response.json();
                 alert(data.message);  // Notify user of success
                 document.getElementById('elapsedTime').textContent = `Elapsed Time: ${elapsedTime} seconds`;
-    
+
                 // Display the result file paths
                 const resultsList = document.getElementById('resultsList');
                 resultsList.innerHTML = '';  // Clear previous results
                 data.results.forEach(result => {
                     const li = document.createElement('li');
-                    li.textContent = result;
-                    resultsList.appendChild(li);
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = `/download/${encodeURIComponent(result)}`;  // Create the download link
+                    downloadLink.textContent = result;  // Set the link text to the filename
+                    downloadLink.target = "_blank";  // Open in a new tab
+                    li.appendChild(downloadLink);  // Add the link to the list item
+                    resultsList.appendChild(li);  // Append the list item to the results list
                 });
-    
-                // Populate results table with data
-                const resultsTableBody = document.getElementById('resultsTableBody');
-                resultsTableBody.innerHTML = '';  // Clear previous table rows
-                data.data.forEach(record => {  // Iterate over each record
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${record['Last Name'] || ''}</td>
-                        <td>${record['First Name'] || ''}</td>
-                        <td>${record['Middle Initial'] || ''}</td>
-                        <td>${record['ID'] || ''}</td>
-                        <td>${record['Exam ID'] || ''}</td>
-                        <td>${record['Score'] || ''}</td>
-                        <td>${JSON.stringify(record['Invalid Answer'] || [])}</td>
-                        <td>${JSON.stringify(record['Incorrect Answer'] || [])}</td>
-                    `;
-                    resultsTableBody.appendChild(row);
-                });
-    
+
                 document.getElementById('resultsContainer').style.display = 'block'; // Show results
             } else {
                 const errorData = await response.json();
                 alert('Error: ' + errorData.message);  // Notify user of error
             }
-    
+
             // Hide loading indicator
             document.getElementById('loadingIndicator').style.display = 'none';
         });
