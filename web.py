@@ -1,4 +1,4 @@
-import omr, utilis
+import omr2, utilis
 import time
 
 
@@ -7,7 +7,8 @@ start_time = time.time()
 csv_path = utilis.select_csv_file()
 images = utilis.choose_folder()
 
-omr.omr(csv_path,images)
+filename = omr2.omr2(csv_path,images)
+print(filename)
 
 # Calculate elapsed time
 elapsed_time = time.time() - start_time

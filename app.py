@@ -1,18 +1,17 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 import os
-import base64
-from datetime import datetime
-import csv
 import time
 import uuid
-import omr, utilis
+from omr2 import omr
+from datetime import datetime  # Ensure this is imported at the top of your file
+import pandas as pd
 
 app = Flask(__name__)
 
 @app.route('/')
 def camera():
     # Define the base directory
-    base_directory = 'C:/xampp/htdocs/omr/uploads'
+    base_directory = os.path.join(os.getcwd(), 'uploads')
     folder_paths = {}
 
     # Loop through folders to collect CSV files
@@ -75,31 +74,42 @@ def get_photos():
 
     return jsonify(photos_by_folder)
 
-app.route('/scan', methods=['POST'])
+@app.route('/scan', methods=['POST'])
 def scan_route():
     data = request.get_json()
     folder_path = data.get('folderPath')
 
-    # Check if the folder exists
     if os.path.exists(folder_path):
-        # List all CSV files in the specified folder
         csv_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
         
-        # Check if any CSV files were found
         if not csv_files:
             return jsonify({'message': 'No CSV files found in the specified folder.'}), 404
         
-        # Loop through each CSV file and run the OMR process
         results = []
+        all_data = []  # To store all the data for the CSVs
+        start_time = time.time()
+        
         for csv_file in csv_files:
-            # Call the omr function for each CSV file
-            result_csv = omr.omr(csv_file, folder_path)
-            results.append(result_csv)  # Collect result paths
+            result_csv = omr(csv_file, folder_path)  # Call the omr function
+            
+            # Load the results CSV to return data
+            if result_csv:
+                df = pd.read_csv(result_csv)
+                all_data.extend(df.to_dict(orient='records'))  # Extend records for later display
+                results.append(result_csv)
 
-        return jsonify({'message': f'Scanned folder: {folder_path}. Processed CSV files.', 'results': results})
+        elapsed_time = time.time() - start_time
+        
+        return jsonify({
+            'message': f'Scanned folder: {folder_path}. Processed CSV files.',
+            'results': results,
+            'data': all_data,  # Return the combined data for display
+            'elapsed_time': elapsed_time
+        })
     
     else:
         return jsonify({'message': 'Folder does not exist.'}), 404
+
 
 
 if __name__ == '__main__':
