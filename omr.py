@@ -119,8 +119,13 @@ def omr(csv_path, images):
                 
             # utilis.txt_to_csv(filename, 'output.csv', image_folder_path, delimiter=' ')
 
+
         except Exception as e:
             print(e)
+
+     # Return the path to the created CSV file
+        return filename
+    
     except FileNotFoundError:
         print(f"Error: The file at '{csv_folder_path}' was not found. Please check the path.")
 

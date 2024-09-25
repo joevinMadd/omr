@@ -1,10 +1,10 @@
 <!-- templates/camera.html -->
 {% extends "base.html" %}
 
-{% block title %}Capture Multiple Photos{% endblock %}
+{% block title %}Capture Multiple Photos & Upload CSV{% endblock %}
 
 {% block header %}
-    Capture and Save Multiple Photos
+    Capture and Save Multiple Photos, Upload CSV
 {% endblock %}
 
 {% block content %}
@@ -26,6 +26,15 @@
         <button type="submit">Save Photos</button>
     </form>
 
+    <!-- Form to upload a CSV file to the folder -->
+    <form id="csvForm" enctype="multipart/form-data" style="margin-top: 20px;">
+        <label for="csvFile">Upload CSV to the Same Folder:</label>
+        <input type="file" id="csvFile" accept=".csv" required><br><br>
+
+        <!-- Button to upload the CSV file -->
+        <button type="submit">Upload CSV</button>
+    </form>
+
     <!-- Display chart for saved photos -->
     <div id="photo-chart">
         <h2>Saved Photos by Folder</h2>
@@ -41,6 +50,35 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Display folder and CSV file paths -->
+    <h2>Folder and CSV File Paths</h2>
+    <div id="folderPaths">
+        {% for folder_name, paths in folder_paths.items() %}
+            <h3>{{ folder_name }}</h3>
+            <p>Folder Path: {{ paths.folder_path }}</p>
+            <h4>CSV Files:</h4>
+            <ul>
+                {% for csv_file in paths.csv_files %}
+                    <li>{{ csv_file }}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
+
+    <!-- Scan button -->
+    <h2>Scan Folder and CSV Files</h2>
+    <form id="scanForm" style="margin-top: 20px;">
+        <label for="scanFolderName">Select Folder:</label>
+        <select id="scanFolderName" name="scanFolderName" required>
+            {% for folder_name, paths in folder_paths.items() %}
+                <option value="{{ paths.folder_path }}">{{ folder_name }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <button type="submit">Scan</button>
+    </form>
+
 {% endblock %}
 
 {% block scripts %}
@@ -49,6 +87,8 @@
         const capturePhoto = document.getElementById('capturePhoto');
         const canvasContainer = document.getElementById('canvasContainer');
         const photoForm = document.getElementById('photoForm');
+        const csvForm = document.getElementById('csvForm');
+        const csvFileInput = document.getElementById('csvFile');
         let capturedImages = [];
 
         // When the "Get Photos" button is clicked, open the camera input
@@ -93,23 +133,59 @@
             e.preventDefault();
             const folderName = document.getElementById('folderName').value;
 
-            // Send all captured images and folder name to the backend
+            // Prepare FormData to send images to the backend
+            const formData = new FormData();
+            formData.append('folderName', folderName);
+
+            // Append captured images as individual files
+            for (let i = 0; i < capturedImages.length; i++) {
+                const imageData = capturedImages[i];
+                const blob = await (await fetch(imageData)).blob();  // Convert data URL to Blob
+                formData.append('images', blob, `photo_${Date.now()}_${i}.png`);  // Make filenames unique
+            }
+
+            // Send form data to the backend for saving photos
             const response = await fetch('/save-photos', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    folderName: folderName,
-                    images: capturedImages  // Make sure all images are sent
-                })
+                body: formData
             });
 
             if (response.ok) {
                 alert('Photos saved successfully!');
-                loadSavedPhotos();
+                loadSavedPhotos();  // Reload saved photos
+                capturePhoto.value = '';  // Reset input
+                canvasContainer.innerHTML = '';  // Clear canvases for new captures
             } else {
                 alert('Error saving photos.');
+            }
+        });
+
+        // Handle form submission to upload CSV
+        csvForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const folderName = document.getElementById('folderName').value;
+            const csvFile = csvFileInput.files[0];
+
+            if (!csvFile) {
+                alert('Please select a CSV file to upload.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('folderName', folderName);
+            formData.append('csvFile', csvFile);
+
+            // Send form data to the backend for saving CSV
+            const response = await fetch('/upload-csv', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('CSV file uploaded successfully!');
+                csvFileInput.value = '';  // Reset CSV input
+            } else {
+                alert('Error uploading CSV.');
             }
         });
 
@@ -147,5 +223,35 @@
 
         // Load the saved photos initially when the page loads
         window.onload = loadSavedPhotos;
+
+        
+    // Handle form submission for scanning
+    document.getElementById('scanForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const folderPath = document.getElementById('scanFolderName').value;
+
+        // Prepare FormData to send folder path to the backend
+        const formData = { folderPath };
+
+        // Send form data to the backend for scanning
+        const response = await fetch('/scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert(data.message);  // Notify user of success
+        } else {
+            const errorData = await response.json();
+            alert('Error: ' + errorData.message);  // Notify user of error
+        }
+    });
+
+    // Load the saved photos initially when the page loads
+    window.onload = loadSavedPhotos;
     </script>
 {% endblock %}
