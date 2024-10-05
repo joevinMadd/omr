@@ -41,7 +41,7 @@ def save_photos():
         os.makedirs(folder_path)
 
     photos = request.files.getlist('images')
-    
+
     for photo in photos:
         # Create a unique filename using a combination of timestamp and UUID
         unique_filename = f"{int(time.time())}_{uuid.uuid4().hex[:8]}_{photo.filename}"
@@ -84,14 +84,14 @@ def scan_route():
     if os.path.exists(folder_path):
         # List all CSV files in the specified folder
         csv_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.csv')]
-        
+
         # Check if any CSV files were found
         if not csv_files:
             return jsonify({'message': 'No CSV files found in the specified folder.'}), 404
-        
+
         results = []
         start_time = time.time()  # Start timer
-        
+
         for csv_file in csv_files:
             # Call the omr function for each CSV file
             result_csv = omr(csv_file, folder_path)  # Ensure this function is defined correctly
@@ -104,7 +104,7 @@ def scan_route():
             'results': results,
             'elapsed_time': elapsed_time
         })
-    
+
     else:
         return jsonify({'message': 'Folder does not exist.'}), 404
 
@@ -116,4 +116,4 @@ def download_file(filename):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
