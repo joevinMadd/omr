@@ -5,6 +5,7 @@ import os
 import shutil
 from keras.models import load_model  # TensorFlow is required for Keras to work
 from PIL import Image, ImageOps
+from pathlib import Path
 
 
 
@@ -135,7 +136,9 @@ def rect_locator(image_path):
 def id_scan(cropStud):
     # MODEL LOADING 
     np.set_printoptions(suppress=True)
-    model = load_model("keras_model.h5", compile=False) # Load the model
+    THIS_FOLDER = Path(__file__).parent.resolve()
+    my_model = THIS_FOLDER / "keras_model.h5"
+    model = load_model(my_model, compile=False) # Load the model
     class_names = open("labels.txt", "r").readlines() # Load the labels
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32) # Create the array of the right shape to feed into the keras model
     # IMAGE CHECKER FUNCTION
@@ -212,7 +215,9 @@ def id_check(id_marks):
 def exam_id_scan(cropExam):
     # MODEL LOADING 
     np.set_printoptions(suppress=True)
-    model = load_model("keras_model.h5", compile=False) # Load the model
+    THIS_FOLDER = Path(__file__).parent.resolve()
+    my_model = THIS_FOLDER / "keras_model.h5"
+    model = load_model(my_model, compile=False) # Load the model
     class_names = open("labels.txt", "r").readlines() # Load the labels
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32) # Create the array of the right shape to feed into the keras model
     # IMAGE CHECKER FUNCTION
@@ -288,7 +293,9 @@ def exam_id_check(exam_id_mark):
 def answer_scan(cropAns):
     # MODEL LOADING 
     np.set_printoptions(suppress=True)
-    model = load_model("keras_model.h5", compile=False) # Load the model
+    THIS_FOLDER = Path(__file__).parent.resolve()
+    my_model = THIS_FOLDER / "keras_model.h5"
+    model = load_model(my_model, compile=False) # Load the model
     class_names = open("labels.txt", "r").readlines() # Load the labels
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32) # Create the array of the right shape to feed into the keras model
     # IMAGE CHECKER FUNCTION
