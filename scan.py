@@ -139,7 +139,8 @@ def id_scan(cropStud):
     THIS_FOLDER = Path(__file__).parent.resolve()
     my_model = THIS_FOLDER / "keras_model.h5"
     model = load_model(my_model, compile=False) # Load the model
-    class_names = open("labels.txt", "r").readlines() # Load the labels
+    my_labels = THIS_FOLDER / "labels.txt"
+    class_names = open(my_labels, "r").readlines() # Load the labels
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32) # Create the array of the right shape to feed into the keras model
     # IMAGE CHECKER FUNCTION
     def check(image):
@@ -218,7 +219,8 @@ def exam_id_scan(cropExam):
     THIS_FOLDER = Path(__file__).parent.resolve()
     my_model = THIS_FOLDER / "keras_model.h5"
     model = load_model(my_model, compile=False) # Load the model
-    class_names = open("labels.txt", "r").readlines() # Load the labels
+    my_labels = THIS_FOLDER / "labels.txt"
+    class_names = open(my_labels, "r").readlines() # Load the labels
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32) # Create the array of the right shape to feed into the keras model
     # IMAGE CHECKER FUNCTION
     def check(image):
@@ -296,7 +298,8 @@ def answer_scan(cropAns):
     THIS_FOLDER = Path(__file__).parent.resolve()
     my_model = THIS_FOLDER / "keras_model.h5"
     model = load_model(my_model, compile=False) # Load the model
-    class_names = open("labels.txt", "r").readlines() # Load the labels
+    my_labels = THIS_FOLDER / "labels.txt"
+    class_names = open(my_labels, "r").readlines() # Load the labels
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32) # Create the array of the right shape to feed into the keras model
     # IMAGE CHECKER FUNCTION
     def check(image):
